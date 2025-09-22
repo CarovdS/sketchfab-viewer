@@ -50,10 +50,10 @@ iframe { width: 100vw; height: 90vh; border: none; }
 <script> 
       let api
       let nodesGlobal
-      const margin = Math.cos(15 * Math.PI / 180); // ~0.966
+      const margin = Math.cos(30 * Math.PI / 180); // ~0.966
       const UP = [0, 0, 1];
       let triggerCount = 0;
-      const triggerDuration = 3;
+      const triggerDuration = 2;
       //let cameraTimer = null;
       //let savedPos = null;
       /*function lowerCameraToFloorDelayed(delay, btn){
@@ -102,7 +102,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       function lowerCameraToFloor(camera){
 
               previousPos = camera.position
-               api.setCameraLookAt([previousPos[0], previousPos[1], 0], [0, 0, 0], 0, function(err) {
+               api.setCameraLookAt([previousPos[0], previousPos[1], 0.1], [0, 0, 0], 0, function(err) {
                       if (!err) {
                           window.console.log('Camera moved');
                       }
