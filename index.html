@@ -33,6 +33,22 @@ iframe { width: 100vw; height: 90vh; border: none; }
 <script> 
       let api
       let nodesGlobal
+
+
+      
+      function startCameraAnimation() {
+        if (cameraTimer) return; // don’t start twice
+      
+        cameraTimer = setInterval(() => {
+          // simple animation: move in a circle around the origin
+          api.setCameraLookAt([0, 0, 10], [0, 0, 0], 4.3, function(err) {
+                      if (!err) {
+                          window.console.log('Camera moved');
+                      }
+                  });
+        }, 5000); // update every 100 ms
+      }
+      
       function extractUid(url) {
             // Match the 32-char model UID at the end of a Sketchfab URL
             const match = url.match(/([a-zA-Z0-9]{32})(?:\?.*)?$/);
@@ -61,11 +77,8 @@ iframe { width: 100vw; height: 90vh; border: none; }
       function translate(api){
           return function(err, nodes)
           {
-              api.setCameraLookAt([0, 0, 10], [0, 0, 0], 4.3, function(err) {
-                      if (!err) {
-                          window.console.log('Camera moved');
-                      }
-                  });
+            
+                startCameraAnimation()
               nodesGlobal = nodes
               if (!err) {      // root node id
                   api.translate(0, [0, 0, 2]); // lift whole scene by +1.6 meters (Y up)
