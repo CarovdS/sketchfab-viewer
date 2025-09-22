@@ -35,7 +35,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       let nodesGlobal
       function extractUid(url) {
             // Match the 32-char model UID at the end of a Sketchfab URL
-            const match = url.match(/\/([a-zA-Z0-9]{32})(?:\?.*)?$/);
+            const match = url.match(/([a-zA-Z0-9]{32})(?:\?.*)?$/);
             return match ? match[1] : null;
       }
       function startApiFunc(apiInstance){
