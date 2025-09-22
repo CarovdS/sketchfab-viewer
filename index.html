@@ -7,11 +7,20 @@
 
 </head>
 <body>
+<div class="sketchfab-embed-wrapper"> 
+      <iframe id="api-frame" width="640" height="480" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" execution-while-out-of-viewport execution-while-not-rendered web-share></iframe>
+
+     <!-- <iframe title="BSA WW2 folding paratrooper bicycle" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/4e57c57230fe467c8b618bcd28f14af8/embed">
+      </iframe> -->
+      <p style="font-size: 13px; font-weight: normal; margin: 5px; color: #4A4A4A;"> <a href="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> BSA WW2 folding paratrooper bicycle </a> by <a href="https://sketchfab.com/jameshughdalton?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> jameshughdalton </a> on <a href="https://sketchfab.com?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;">Sketchfab</a>
+      </p>
+</div>
 
 <div class="sketchfab-embed-wrapper"> <iframe title="BSA WW2 folding paratrooper bicycle" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/4e57c57230fe467c8b618bcd28f14af8/embed"> </iframe> <p style="font-size: 13px; font-weight: normal; margin: 5px; color: #4A4A4A;"> <a href="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> BSA WW2 folding paratrooper bicycle </a> by <a href="https://sketchfab.com/jameshughdalton?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> jameshughdalton </a> on <a href="https://sketchfab.com?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;">Sketchfab</a></p></div>
 <script> 
-      
-      function startApiFunc(api){
+      let api
+      function startApiFunc(apiInstance){
+            api = apiInstance
             const func = addEventListenerFunc(api)
             api.start(func)
       }
@@ -41,7 +50,7 @@
       }
       function translateModel()
       {
-        const iframe = document.querySelector("iframe");
+        const iframe = document.getElementById("api-frame");
         const client = new Sketchfab(iframe);
         client.init("4e57c57230fe467c8b618bcd28f14af8", 
           {success: startApiFunc, 
