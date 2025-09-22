@@ -29,10 +29,10 @@ iframe { width: 100vw; height: 90vh; border: none; }
       <input id="url" value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8">
       <button onclick="loadModel()">Load Model</button>
       Lower the camera to floor after x seconds
-      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(5, this)">5 seconds</button>
+      <!--<button class="delay-btn" onclick="lowerCameraToFloorDelayed(5, this)">5 seconds</button>
       <button class="delay-btn" onclick="lowerCameraToFloorDelayed(10, this)">10 seconds</button>
       <button class="delay-btn" onclick="lowerCameraToFloorDelayed(20, this)">20 seconds</button>
-      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(30, this)">30 seconds</button>
+      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(30, this)">30 seconds</button>-->
 
 </div>
 <div id="sketchfab-embed-wrapper"> 
@@ -50,18 +50,56 @@ iframe { width: 100vw; height: 90vh; border: none; }
 <script> 
       let api
       let nodesGlobal
-
-      let cameraTimer = null;
-
-      function lowerCameraToFloorDelayed(delay, btn){
+      const margin = Math.cos(15 * Math.PI / 180); // ~0.966
+      const UP = [0, 0, 1];
+      let triggerCount = 0;
+      const triggerDuration = 3;
+      //let cameraTimer = null;
+      //let savedPos = null;
+      /*function lowerCameraToFloorDelayed(delay, btn){
               if (cameraTimer){
                   return
               }
                btn.classList.add("pressed");
-
-              cameraTimer = setTimeout(() => api.getCameraLookAt((err, camera) => lowerCameraToFloor(btn, err, camera)), delay * 1000)   
+              api.getCameraLookAt((err, camera) => 
+                {
+                  cameraTimer = setTimeout(() => lowerCameraToFloor(btn, err, camera), delay * 1000)   
+                })
+        
+            
+      } */
+      function normalize(v) {
+        const len = Math.hypot(v[0], v[1], v[2]);
+        return [v[0]/len, v[1]/len, v[2]/len];
       }
-      function lowerCameraToFloor(btn, err, camera){
+      function dotProduct(vec1, vec2){
+          return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2]
+      }
+      function startCheckingCameraLoweringThreshold()
+        {    
+              setInterval(() => api.getCameraLookAt(checkTarget), 1000)   
+        }
+  
+      function checkTarget(err, camera){
+          const ray = [
+            camera.target[0] - camera.position[0],
+            camera.target[1] - camera.position[1],
+            camera.target[2] - camera.position[2]
+          ];
+          let normRay = normalize(ray) 
+          let dot = dotProduct(UP, normRay)
+          if (dot >= margin){
+                triggerCount++
+                if (triggerCount <= triggerDuration)
+                {
+                    return
+                }
+                lowerCameraToFloor(camera) 
+          }
+          triggerCount = 0
+      }
+
+      function lowerCameraToFloor(camera){
 
               previousPos = camera.position
                api.setCameraLookAt([previousPos[0], previousPos[1], 0], [0, 0, 0], 0, function(err) {
@@ -69,9 +107,9 @@ iframe { width: 100vw; height: 90vh; border: none; }
                           window.console.log('Camera moved');
                       }
                   });
-                btn.classList.remove("pressed");
+                //btn.classList.remove("pressed");
 
-            cameraTimer = null
+           // cameraTimer = null
       }
       
       function extractUid(url) {
@@ -83,6 +121,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
             api = apiInstance
             //const func = addEventListenerFunc(api) -->
             api.start()
+            startCheckingCameraLoweringThreshold()
       }
      /* function addEventListenerFunc(api){
             
