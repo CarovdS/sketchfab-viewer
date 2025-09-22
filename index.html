@@ -61,10 +61,16 @@ iframe { width: 100vw; height: 90vh; border: none; }
       function translate(api){
           return function(err, nodes)
           {
+              api.setCameraLookAt([0, 0, 10], [0, 0, 0], 4.3, function(err) {
+                      if (!err) {
+                          window.console.log('Camera moved');
+                      }
+                  });
               nodesGlobal = nodes
               if (!err) {      // root node id
                   api.translate(0, [0, 0, 2]); // lift whole scene by +1.6 meters (Y up)
               }
+            
           }
       }
       function loadModel()
