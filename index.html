@@ -102,7 +102,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       function lowerCameraToFloor(camera){
 
               previousPos = camera.position
-               api.setCameraLookAt([previousPos[0], previousPos[1], 0.1], [0, 0, 0], 0, function(err) {
+               api.setCameraLookAt([previousPos[0], previousPos[1], 0.2], [0, 0, 0], 0, function(err) {
                       if (!err) {
                           window.console.log('Camera moved');
                       }
