@@ -9,14 +9,31 @@ body { margin: 0; font-family: sans-serif; background: #111; color: #eee; }
 #controls { padding: 8px; background: #222; }
 #controls input { width: 60%; padding: 4px; }
 iframe { width: 100vw; height: 90vh; border: none; }
+.delay-btn {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+  padding: 6px 12px;
+  margin: 4px;
+  cursor: pointer;
+}
+.delay-btn.pressed {
+  background: #28a745; /* green */
+  border-color: #1e7e34;
+}
 </style>
 </head>
 <body>
 <div id="controls">
       Paste Sketchfab link:
       <input id="url" value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8">
-      <button onclick="loadModel()">Load</button>
-      
+      <button onclick="loadModel()">Load Model</button>
+      Lower the camera to floor after x seconds
+      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(5, this)">5 seconds</button>
+      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(10, this)">10 seconds</button>
+      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(20, this)">20 seconds</button>
+      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(30, this)">30 seconds</button>
+
 </div>
 <div id="sketchfab-embed-wrapper"> 
      <!-- <iframe id="api-frame" width="640" height="480" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" execution-while-out-of-viewport execution-while-not-rendered web-share></iframe> -->
@@ -36,18 +53,25 @@ iframe { width: 100vw; height: 90vh; border: none; }
 
       let cameraTimer = null;
 
-      
-      function startCameraAnimation() {
-        if (cameraTimer) return; // don’t start twice
-      
-        cameraTimer = setInterval(() => {
-          // simple animation: move in a circle around the origin
-          api.setCameraLookAt([0, 0, 10], [0, 0, 0], 4.3, function(err) {
+      function lowerCameraToFloorDelayed(delay, btn){
+              if (cameraTimer){
+                  return
+              }
+               btn.classList.add("pressed");
+
+              cameraTimer = setTimeout(() => api.getCameraLookAt((err, camera) => lowerCameraToFloor(btn, err, camera)), delay * 1000)   
+      }
+      function lowerCameraToFloor(btn, err, camera){
+
+              previousPos = camera.position
+               api.setCameraLookAt([previousPos[0], previousPos[1], 0], [0, 0, 0], 0, function(err) {
                       if (!err) {
                           window.console.log('Camera moved');
                       }
                   });
-        }, 5000); // update every 100 ms
+                btn.classList.remove("pressed");
+
+            cameraTimer = null
       }
       
       function extractUid(url) {
@@ -57,12 +81,14 @@ iframe { width: 100vw; height: 90vh; border: none; }
       }
       function startApiFunc(apiInstance){
             api = apiInstance
-            const func = addEventListenerFunc(api)
-            api.start(func)
+            //const func = addEventListenerFunc(api) -->
+            api.start()
       }
-      function addEventListenerFunc(api){
+     /* function addEventListenerFunc(api){
+            
             const func = getNodeMapFunc(api)
             return function (){
+            
                 api.addEventListener("viewerready", function(){
                     func()  
                 })
@@ -86,7 +112,8 @@ iframe { width: 100vw; height: 90vh; border: none; }
               }
             
           }
-      }
+      } */
+            
       function loadModel()
       {
       const url = document.getElementById("url").value.trim();
