@@ -4,11 +4,21 @@
 <meta charset="UTF-8">
 <title>Sketchfab VR Viewer (Floor Fix)</title>
 <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
-
+<style>
+body { margin: 0; font-family: sans-serif; background: #111; color: #eee; }
+#controls { padding: 8px; background: #222; }
+#controls input { width: 60%; padding: 4px; }
+iframe { width: 100vw; height: 90vh; border: none; }
+</style>
 </head>
 <body>
-<div class="sketchfab-embed-wrapper"> 
-      <iframe id="api-frame" width="640" height="480" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" execution-while-out-of-viewport execution-while-not-rendered web-share></iframe>
+<div id="controls">
+      Paste Sketchfab link:
+      <input id="url" value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8">
+      <button onclick="loadModel()">Load</button>
+</div>
+<div id="sketchfab-embed-wrapper"> 
+     <!-- <iframe id="api-frame" width="640" height="480" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" execution-while-out-of-viewport execution-while-not-rendered web-share></iframe> -->
 
      <!-- <iframe title="BSA WW2 folding paratrooper bicycle" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/4e57c57230fe467c8b618bcd28f14af8/embed">
       </iframe> -->
@@ -16,9 +26,14 @@
       </p>
 </div>
 
-<div class="sketchfab-embed-wrapper"> <iframe title="BSA WW2 folding paratrooper bicycle" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/4e57c57230fe467c8b618bcd28f14af8/embed"> </iframe> <p style="font-size: 13px; font-weight: normal; margin: 5px; color: #4A4A4A;"> <a href="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> BSA WW2 folding paratrooper bicycle </a> by <a href="https://sketchfab.com/jameshughdalton?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> jameshughdalton </a> on <a href="https://sketchfab.com?utm_medium=embed&utm_campaign=share-popup&utm_content=4e57c57230fe467c8b618bcd28f14af8" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;">Sketchfab</a></p></div>
 <script> 
       let api
+      let nodesGlobal
+      function extractUid(url) {
+            // Match the 32-char model UID at the end of a Sketchfab URL
+            const match = url.match(/\/([a-zA-Z0-9]{32})(?:\?.*)?$/);
+            return match ? match[1] : null;
+      }
       function startApiFunc(apiInstance){
             api = apiInstance
             const func = addEventListenerFunc(api)
@@ -42,23 +57,41 @@
       function translate(api){
           return function(err, nodes)
           {
-              if (!err) {
-                  const root = nodes.scene;      // root node id
-                  api.translate(root, [0, 1.6, 0]); // lift whole scene by +1.6 meters (Y up)
+              nodesGlobal = nodes
+              if (!err) {      // root node id
+                  api.translate(0, [0, 1.6, 0]); // lift whole scene by +1.6 meters (Y up)
               }
           }
       }
-      function translateModel()
+      function loadModel()
       {
-        const iframe = document.getElementById("api-frame");
+      const url = document.getElementById("url").value.trim();
+      const uid = extractUid(url);
+      
+      const iframe = document.createElement("iframe");
+      iframe.src = "https://sketchfab.com/models/" + uid + "/embed?autostart=1";
+      iframe.setAttribute("allow", "autoplay; fullscreen; xr-spatial-tracking");
+      iframe.setAttribute("allowfullscreen", "");
+      iframe.setAttribute("mozallowfullscreen", "true");
+      iframe.setAttribute("webkitallowfullscreen", "true");
+      
+      // Boolean or feature-policy attributes
+      iframe.setAttribute("execution-while-out-of-viewport", "");
+      iframe.setAttribute("execution-while-not-rendered", "");
+      iframe.setAttribute("web-share", "");
+      iframe.width = "100%";
+      iframe.height = "100%";
+      iframe.frameBorder = "0";
+      const container = document.getElementById("sketchfab-embed-wrapper");
+      container.innerHTML = "";
+      container.appendChild(iframe);
         const client = new Sketchfab(iframe);
-        client.init("4e57c57230fe467c8b618bcd28f14af8", 
+        client.init(uid, 
           {success: startApiFunc, 
             error: function() { console.error("API init failed")}
           }
          )
       }
-      window.onload = translateModel
 </script>
 
 </body>
