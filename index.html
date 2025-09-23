@@ -101,7 +101,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       let triggerToggleCount = 0;
       const triggerToggleDuration = 3;
       let prevBtn;
-
+      let toggleAlreadyTriggered = false;
 
 
       let goingUp = false;
@@ -185,19 +185,23 @@ iframe { width: 100vw; height: 90vh; border: none; }
           let normRay = normalize(ray) 
           let dot = dotProduct(UP, normRay)
           if (dot >= margin){
+                toggleAlreadyTriggered = false
                 triggerMoveCount++
-                triggerToggleCount = 0
-                if (triggerMoveCount <= triggerMoveDuration){return}
-                moveTheCamera(camera) 
+                if (triggerMoveCount > triggerMoveDuration){moveTheCamera(camera)}
           } else if (dot < -margin){
-                triggerToggleCount++
                 triggerMoveCount = 0
-                if (triggerToggleCount <= triggerToggleDuration){return}
-                toggleCameraMovementDirection()
-                triggerToggleCount = 0
+                if (toggleAlreadyTriggered){return}
+                triggerToggleCount++
+                if (triggerToggleCount > triggerToggleDuration){
+                  toggleCameraMovementDirection()
+                  toggleAlreadyTriggered = true
+                  triggerToggleCount = 0
+
+                }
+  
           }else{
             triggerMoveCount = 0
-            triggerToggleCount = 0
+            toggleAlreadyTriggered = false
           }
 
 
