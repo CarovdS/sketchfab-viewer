@@ -169,12 +169,16 @@ iframe { width: 100vw; height: 90vh; border: none; }
             
           }
       } */
+
+      function init(){
+           let collection = document.getElementsByClassName("delay-btn");
+            prevBtn = collection[0]
+            setAboveFloorHeight(0, prevBtn)
+      }
             
       function loadModel()
       {
-      let collection = document.getElementsByClassName("delay-btn");
-
-      prevBtn = collection[0]
+     
       const url = document.getElementById("url").value.trim();
       const uid = extractUid(url);
       if (!uid) {
@@ -205,6 +209,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
           }
          )
       }
+      window.onload = init
 </script>
 
 </body>
