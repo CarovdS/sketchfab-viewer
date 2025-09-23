@@ -186,15 +186,18 @@ iframe { width: 100vw; height: 90vh; border: none; }
           let dot = dotProduct(UP, normRay)
           if (dot >= margin){
                 triggerMoveCount++
+                triggerToggleCount = 0
                 if (triggerMoveCount <= triggerMoveDuration){return}
                 moveTheCamera(camera) 
           } else if (dot < -margin){
                 triggerToggleCount++
+                triggerMoveCount = 0
                 if (triggerToggleCount <= triggerToggleDuration){return}
                 toggleCameraMovementDirection()
                 triggerToggleCount = 0
           }else{
             triggerMoveCount = 0
+            triggerToggleCount = 0
           }
 
 
