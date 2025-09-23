@@ -21,6 +21,28 @@ iframe { width: 100vw; height: 90vh; border: none; }
   background: #28a745; /* green */
   border-color: #1e7e34;
 }
+/* slider */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.slider-container input[type="range"] {
+  flex: 1;
+}
+/* toggle button */
+.toggle-btn {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.toggle-btn.active {
+  background: #28a745; /* green */
+  border-color: #1e7e34;
+}
 </style>
 </head>
 <body>
@@ -29,7 +51,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       <input id="url" value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8">
       <button onclick="loadModel()">Load Model</button>
       Lower the camera to x height above the floor
-      <button class="delay-btn" onclick="setAboveFloorHeight(0, this)">0.0</button>
+      <!-- <button class="delay-btn" onclick="setAboveFloorHeight(0, this)">0.0</button>
       <button class="delay-btn" onclick="setAboveFloorHeight(0.1, this)">0.1</button>
       <button class="delay-btn" onclick="setAboveFloorHeight(0.2, this)">0.2</button>
       <button class="delay-btn" onclick="setAboveFloorHeight(0.3, this)">0.3</button>
@@ -45,8 +67,16 @@ iframe { width: 100vw; height: 90vh; border: none; }
       <button class="delay-btn" onclick="setAboveFloorHeight(50, this)">50.0</button>
       <button class="delay-btn" onclick="setAboveFloorHeight(100, this)">100</button>
       <button class="delay-btn" onclick="setAboveFloorHeight(200, this)">200</button>
-      <button class="delay-btn" onclick="setAboveFloorHeight(500, this)">500</button>
-
+      <button class="delay-btn" onclick="setAboveFloorHeight(500, this)">500</button> -->
+       <!-- Slider -->
+      <div class="slider-container">
+        <label for="heightSlider">Height:</label>
+        <input type="range" id="heightSlider" min="0" max="100" step="1" value="10">
+        <span id="heightValue"></span>
+      </div>
+    
+      <!-- Toggle -->
+      <button id="directionToggle" class="toggle-btn">Direction: Down</button>
 
 </div>
 <div id="sketchfab-embed-wrapper"> 
@@ -68,8 +98,46 @@ iframe { width: 100vw; height: 90vh; border: none; }
       const UP = [0, 0, 1];
       let triggerCount = 0;
       const triggerDuration = 2;
-      let aboveFloorHeight = 0;
       let prevBtn;
+
+
+
+      let goingUp = false;
+            // --- Toggle button ---
+      const toggleBtn = document.getElementById("directionToggle");
+      toggleBtn.addEventListener("click", () => {
+        goingUp = !goingUp;
+        toggleBtn.classList.toggle("active", goingUp);
+        toggleBtn.textContent = goingUp ? "Direction: Up" : "Direction: Down";
+      });
+  
+     
+
+      const slider = document.getElementById("heightSlider");
+      const heightValue = document.getElementById("heightValue");
+      const minVerticalStep = 0.01;   // smallest value
+      const maxVerticalStep = 500;   // largest value
+      const sliderRange = 100;
+      slider.min = 0;
+      slider.max = sliderRange;
+      slider.step = 1;
+      slider.value = 10;
+      
+      let verticalStep;
+      processSliderInput()
+      slider.addEventListener("input", processSliderInput);
+  
+      function processSliderInput(){
+          verticalStep = sliderValueToVerticalStep(slider.value);
+          heightValue.textContent = verticalStep.toFixed(2);
+      }
+  
+       function sliderValueToVerticalStep(sliderValue){
+        let ratio = maxVerticalStep/minVerticalStep
+        let growthFactor = Math.pow(ratio, 1/sliderRange);
+        let verticalStepValue = Math.pow(growthFactor, sliderValue) * minVerticalStep
+        return verticalStepValue
+      }
       //let cameraTimer = null;
       //let savedPos = null;
       /*function lowerCameraToFloorDelayed(delay, btn){
@@ -102,7 +170,9 @@ iframe { width: 100vw; height: 90vh; border: none; }
         {    
               setInterval(() => api.getCameraLookAt(checkTarget), 1000)   
         }
-  
+
+      
+     
       function checkTarget(err, camera){
           const ray = [
             camera.target[0] - camera.position[0],
@@ -117,19 +187,20 @@ iframe { width: 100vw; height: 90vh; border: none; }
                 {
                     return
                 }
-                lowerCameraToFloor(camera) 
+                lowerTheCamera(camera) 
           }
           triggerCount = 0
       }
 
-      function lowerCameraToFloor(camera){
+      function lowerTheCamera(camera){
 
               let previousPos = camera.position
-               api.setCameraLookAt([previousPos[0], previousPos[1], aboveFloorHeight], [0, 0, 0], 0, function(err) {
-                      if (!err) {
-                          window.console.log('Camera moved');
-                      }
-                  });
+              let newVerticalPos = previousPos[2] + verticalStep * (goingUp ? 1 : -1)
+               api.setCameraLookAt([previousPos[0], previousPos[1], newVerticalPos], [0, 0, 0], 0, function(err) {
+                    if (!err) {
+                        window.console.log('Camera moved');
+                    }
+                });
                 //btn.classList.remove("pressed");
 
            // cameraTimer = null
@@ -175,11 +246,11 @@ iframe { width: 100vw; height: 90vh; border: none; }
             
           }
       } */
-
+    
       function init(){
            let collection = document.getElementsByClassName("delay-btn");
             prevBtn = collection[0]
-            setAboveFloorHeight(0, prevBtn)
+            //setAboveFloorHeight(0, prevBtn)
       }
             
       function loadModel()
