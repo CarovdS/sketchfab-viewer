@@ -80,9 +80,10 @@ iframe { width: 100vw; height: 90vh; border: none; }
       } */      
         function setAboveFloorHeight(height, btn){
           prevBtn.classList.remove("pressed");
-
+          
           aboveFloorHeight = height
           btn.classList.add("pressed");
+          prevBtn = btn
         }
 
       function normalize(v) {
