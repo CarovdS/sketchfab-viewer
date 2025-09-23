@@ -28,11 +28,20 @@ iframe { width: 100vw; height: 90vh; border: none; }
       Paste Sketchfab link:
       <input id="url" value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8">
       <button onclick="loadModel()">Load Model</button>
-      Lower the camera to floor after x seconds
-      <!--<button class="delay-btn" onclick="lowerCameraToFloorDelayed(5, this)">5 seconds</button>
-      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(10, this)">10 seconds</button>
-      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(20, this)">20 seconds</button>
-      <button class="delay-btn" onclick="lowerCameraToFloorDelayed(30, this)">30 seconds</button>-->
+      Lower the camera to x height above the floor
+      <button class="delay-btn" onclick="setAboveFloorHeight(0, this)">0.0</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(0.1, this)">0.1</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(0.2, this)">0.2</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(0.3, this)">0.3</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(0.5, this)">0.5</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(0.7, this)">0.7</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(1, this)">1.0</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(1.5, this)">1.5</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(2, this)">2.0</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(3, this)">3.0</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(5, this)">5.0</button>
+      <button class="delay-btn" onclick="setAboveFloorHeight(10, this)">10.0</button>
+
 
 </div>
 <div id="sketchfab-embed-wrapper"> 
@@ -54,6 +63,8 @@ iframe { width: 100vw; height: 90vh; border: none; }
       const UP = [0, 0, 1];
       let triggerCount = 0;
       const triggerDuration = 2;
+      let aboveFloorHeight = 0;
+      let prevBtn;
       //let cameraTimer = null;
       //let savedPos = null;
       /*function lowerCameraToFloorDelayed(delay, btn){
@@ -65,9 +76,15 @@ iframe { width: 100vw; height: 90vh; border: none; }
                 {
                   cameraTimer = setTimeout(() => lowerCameraToFloor(btn, err, camera), delay * 1000)   
                 })
-        
             
-      } */
+      } */      
+        function setAboveFloorHeight(height, btn){
+          prevBtn.classList.remove("pressed");
+
+          aboveFloorHeight = height
+          btn.classList.add("pressed");
+        }
+
       function normalize(v) {
         const len = Math.hypot(v[0], v[1], v[2]);
         return [v[0]/len, v[1]/len, v[2]/len];
@@ -101,8 +118,8 @@ iframe { width: 100vw; height: 90vh; border: none; }
 
       function lowerCameraToFloor(camera){
 
-              previousPos = camera.position
-               api.setCameraLookAt([previousPos[0], previousPos[1], 1], [0, 0, 0], 0, function(err) {
+              let previousPos = camera.position
+               api.setCameraLookAt([previousPos[0], previousPos[1], aboveFloorHeight], [0, 0, 0], 0, function(err) {
                       if (!err) {
                           window.console.log('Camera moved');
                       }
@@ -155,6 +172,9 @@ iframe { width: 100vw; height: 90vh; border: none; }
             
       function loadModel()
       {
+      let collection = document.getElementsByClassName("delay-btn");
+
+      prevBtn = collection[0]
       const url = document.getElementById("url").value.trim();
       const uid = extractUid(url);
       if (!uid) {
