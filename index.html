@@ -96,8 +96,10 @@ iframe { width: 100vw; height: 90vh; border: none; }
       let nodesGlobal
       const margin = Math.cos(45 * Math.PI / 180); // ~0.966
       const UP = [0, 0, 1];
-      let triggerCount = 0;
-      const triggerDuration = 2;
+      let triggerMoveCount = 0;
+      const triggerMoveDuration = 2;
+      let triggerToggleCount = 0;
+      const triggerToggleDuration = 3;
       let prevBtn;
 
 
@@ -105,12 +107,13 @@ iframe { width: 100vw; height: 90vh; border: none; }
       let goingUp = false;
             // --- Toggle button ---
       const toggleBtn = document.getElementById("directionToggle");
-      toggleBtn.addEventListener("click", () => {
+      toggleBtn.addEventListener("click", () => toggleCameraMovementDirection());
+
+      function toggleCameraMovementDirection(){
         goingUp = !goingUp;
         toggleBtn.classList.toggle("active", goingUp);
         toggleBtn.textContent = goingUp ? "Direction: Up" : "Direction: Down";
-      });
-  
+      }
      
 
       const slider = document.getElementById("heightSlider");
@@ -167,9 +170,9 @@ iframe { width: 100vw; height: 90vh; border: none; }
           return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2]
       }
       function startCheckingCameraLoweringThreshold()
-        {    
-              setInterval(() => api.getCameraLookAt(checkTarget), 1000)   
-        }
+      {    
+            setInterval(() => api.getCameraLookAt(checkTarget), 1000)   
+      }
 
       
      
@@ -182,17 +185,22 @@ iframe { width: 100vw; height: 90vh; border: none; }
           let normRay = normalize(ray) 
           let dot = dotProduct(UP, normRay)
           if (dot >= margin){
-                triggerCount++
-                if (triggerCount <= triggerDuration)
-                {
-                    return
-                }
-                lowerTheCamera(camera) 
+                triggerMoveCount++
+                if (triggerMoveCount <= triggerMoveDuration){return}
+                moveTheCamera(camera) 
+          } else if (dot < -margin){
+                triggerToggleCount++
+                if (triggerToggleCount <= triggerToggleDuration){return}
+                toggleCameraMovementDirection()
+                triggerToggleCount = 0
+          }else{
+            triggerMoveCount = 0
           }
-          triggerCount = 0
+
+
       }
 
-      function lowerTheCamera(camera){
+      function moveTheCamera(camera){
 
               let previousPos = camera.position
               let newVerticalPos = previousPos[2] + verticalStep * (goingUp ? 1 : -1)
