@@ -47,11 +47,10 @@ iframe { width: 100vw; height: 90vh; border: none; }
 </head>
 <body>
 <div id="controls">
-      Sketchfab VR Viewer (Scene Movement Option) Version: 14
+      Sketchfab VR Viewer (Scene Movement Option) Version: 15
       Paste Sketchfab link:
       <input id="url" value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8">
       <button onclick="loadModel()">Load Model</button>
-      Lower the camera to x height above the floor
       <!-- <button class="delay-btn" onclick="setAboveFloorHeight(0, this)">0.0</button>
       <button class="delay-btn" onclick="setAboveFloorHeight(0.1, this)">0.1</button>
       <button class="delay-btn" onclick="setAboveFloorHeight(0.2, this)">0.2</button>
@@ -71,7 +70,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       <button class="delay-btn" onclick="setAboveFloorHeight(500, this)">500</button> -->
        <!-- Slider -->
       <div class="slider-container">
-        <label for="heightSlider">Height:</label>
+        <label for="heightSlider">Scene Movement Speed:</label>
         <input type="range" id="heightSlider" min="0" max="100" step="1" value="10">
         <span id="heightValue"></span>
       </div>
