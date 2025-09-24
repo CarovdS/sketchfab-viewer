@@ -22,8 +22,10 @@ iframe { width: 100vw; height: 90vh; border: none; }
   border-color: #1e7e34;
 }
 iframe {
-  width: 50vw; /* subtract left+right margin */
-  margin: 0 auto;
+  width: 80%;       /* iframe is 80% of the viewport width */
+  height: 50vh;     /* still tall, full height minus controls */
+
+  margin: 0 10%;    /* 10% margin left and right */
 }
 /* slider */
 .slider-container {
@@ -52,7 +54,7 @@ iframe {
 <body>
 <div id="controls">
      <p>
-       Sketchfab VR Viewer (Scene Movement Option) Version: 20
+       Sketchfab VR Viewer (Scene Movement Option) Version: 21
      </p> 
     <div>
       Paste Sketchfab link:
