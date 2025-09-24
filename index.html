@@ -76,7 +76,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       </div>
     
       <!-- Toggle -->
-      <button id="directionToggle" class="toggle-btn">Direction: Down</button>
+      <button id="directionToggle" class="toggle-btn">Scene Movement Direction: Down</button>
 
 </div>
 <div id="sketchfab-embed-wrapper"> 
@@ -96,23 +96,21 @@ iframe { width: 100vw; height: 90vh; border: none; }
       let nodesGlobal
       const margin = Math.cos(45 * Math.PI / 180); // ~0.966
       const UP = [0, 0, 1];
-      let triggerMoveCount = 0;
-      const triggerMoveDuration = 2;
-      let triggerToggleCount = 0;
-      const triggerToggleDuration = 3;
+      let countMovementTrigger = 0;
+      const thresholdMovementTrigger = 10;
+     
       let prevBtn;
-      let toggleAlreadyTriggered = false;
+      let toggleUpOrDownSceneMovement = true;
 
 
-      let goingUp = false;
             // --- Toggle button ---
-      const toggleBtn = document.getElementById("directionToggle");
-      toggleBtn.addEventListener("click", () => toggleCameraMovementDirection());
+      const toggleBtnSceneMovementDirection = document.getElementById("directionToggle");
+      toggleBtnSceneMovementDirection.addEventListener("click", () => toggleSceneMovementDirection());
 
-      function toggleCameraMovementDirection(){
-        goingUp = !goingUp;
-        toggleBtn.classList.toggle("active", goingUp);
-        toggleBtn.textContent = goingUp ? "Direction: Up" : "Direction: Down";
+      function toggleSceneMovementDirection(){
+        toggleUpOrDownSceneMovement = !toggleUpOrDownSceneMovement;
+        toggleBtnSceneMovementDirection.classList.toggle("active", toggleUpOrDownSceneMovement);
+        toggleBtnSceneMovementDirection.textContent = toggleUpOrDownSceneMovement ? "Scene Movement Direction: Up" : "Scene Movement Direction: Down";
       }
      
 
@@ -171,7 +169,7 @@ iframe { width: 100vw; height: 90vh; border: none; }
       }
       function startCheckingCameraLoweringThreshold()
       {    
-            setInterval(() => api.getCameraLookAt(checkTarget), 1000)   
+            setInterval(() => api.getCameraLookAt(checkTarget), 100)   
       }
 
       
@@ -185,32 +183,24 @@ iframe { width: 100vw; height: 90vh; border: none; }
           let normRay = normalize(ray) 
           let dot = dotProduct(UP, normRay)
           if (dot >= margin){
-                toggleAlreadyTriggered = false
-                triggerMoveCount++
-                if (triggerMoveCount > triggerMoveDuration){moveTheCamera(camera)}
-          } else if (dot < -margin){
-                triggerMoveCount = 0
-                if (toggleAlreadyTriggered){return}
-                triggerToggleCount++
-                if (triggerToggleCount > triggerToggleDuration){
-                  toggleCameraMovementDirection()
-                  toggleAlreadyTriggered = true
-                  triggerToggleCount = 0
-
+                countMovementTrigger ++
+                if (countMovementTrigger >= thresholdMovementTrigger){
+                  moveTheScene(camera)
                 }
-  
           }else{
-            triggerMoveCount = 0
-            toggleAlreadyTriggered = false
+            if (countMovementTrigger > 0){
+                toggleSceneMovementDirection()
+            }
+            countMovementTrigger = 0
           }
 
 
       }
 
-      function moveTheCamera(camera){
+      function moveTheScene(camera){
 
               let previousPos = camera.position
-              let newVerticalPos = previousPos[2] + verticalStep * (goingUp ? 1 : -1)
+              let newVerticalPos = previousPos[2] + verticalStep * (toggleUpOrDownSceneMovement ? -1 : 1)
                api.setCameraLookAt([previousPos[0], previousPos[1], newVerticalPos], [0, 0, 0], 0, function(err) {
                     if (!err) {
                         window.console.log('Camera moved');
