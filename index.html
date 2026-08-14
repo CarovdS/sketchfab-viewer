@@ -150,6 +150,19 @@ iframe {
         let verticalStepValue = Math.pow(growthFactor, sliderValue) * minVerticalStep
         return verticalStepValue
       }
+
+      window.addEventListener("message", event => {
+
+          if (event.source !== window)
+              return;
+
+          if (event.data?.type === "SKETCHFAB_ROLL_DEBUG") {
+              console.log(
+                  "🔥 RECEIVED FROM PAGE.JS:",
+                  event.data.values
+              );
+          }
+      });
       //let cameraTimer = null;
       //let savedPos = null;
       /*function lowerCameraToFloorDelayed(delay, btn){

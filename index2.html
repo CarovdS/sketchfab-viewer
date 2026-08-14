@@ -1,0 +1,1076 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <title>Sketchfab VR Viewer - Roll Scene Movement</title>
+
+    <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background: #111;
+            color: #eee;
+        }
+
+        #controls {
+            padding: 8px;
+            background: #222;
+        }
+
+        #controls input[type="text"] {
+            width: 60%;
+            padding: 4px;
+        }
+
+        iframe {
+            width: 80%;
+            height: 50vh;
+            margin: 0 10%;
+            border: none;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+
+        button {
+            background: #444;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 6px 12px;
+            margin: 4px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button.active {
+            background: #28a745;
+            border-color: #1e7e34;
+        }
+
+        .debug {
+            margin-top: 10px;
+            padding: 10px;
+            background: #181818;
+            font-family: monospace;
+        }
+
+        .debug-row {
+            margin: 4px 0;
+        }
+
+        .left {
+            color: #ffcc66;
+        }
+
+        .right {
+            color: #66ccff;
+        }
+
+        .neutral {
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="controls">
+
+    <p>
+        Sketchfab VR Viewer - Roll Scene Movement
+        Version: 22
+    </p>
+
+    <div>
+        Paste Sketchfab link:
+    </div>
+
+    <input
+            id="url"
+            type="text"
+            value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8"
+    >
+
+    <button onclick="loadModel()">
+        Load Model
+    </button>
+
+    <button id="orientationButton" onclick="enableOrientation()">
+        Enable Roll Control
+    </button>
+
+
+    <!-- =========================================================
+         MOVEMENT SPEED
+         ========================================================= -->
+
+    <div class="slider-container">
+
+        <label for="heightSlider">
+            Scene Movement Speed:
+        </label>
+
+        <input
+                type="range"
+                id="heightSlider"
+                min="0"
+                max="100"
+                step="1"
+                value="50"
+        >
+
+        <span id="heightValue"></span>
+
+    </div>
+
+
+    <!-- =========================================================
+         ROLL MARGIN
+         ========================================================= -->
+
+    <div class="slider-container">
+
+        <label for="rollMarginSlider">
+            Roll Margin:
+        </label>
+
+        <input
+                type="range"
+                id="rollMarginSlider"
+                min="0"
+                max="45"
+                step="1"
+                value="20"
+        >
+
+        <span id="rollMarginValue">20°</span>
+
+    </div>
+
+
+    <!-- =========================================================
+         DEBUG INFORMATION
+         ========================================================= -->
+
+    <div class="debug">
+
+        <div class="debug-row">
+            Roll:
+            <span id="rollValue">0.0°</span>
+        </div>
+
+        <div class="debug-row">
+            Direction:
+            <span id="directionValue" class="neutral">
+                Neutral
+            </span>
+        </div>
+
+        <div class="debug-row">
+            Trigger count:
+            <span id="triggerValue">0</span>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =============================================================
+     SKETCHFAB CONTAINER
+     ============================================================= -->
+
+<div id="sketchfab-embed-wrapper"></div>
+
+
+<div>
+
+    <p
+            style="
+            font-size: 13px;
+            font-weight: normal;
+            margin: 5px;
+            color: #4A4A4A;
+        "
+    >
+        <a
+                href="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8"
+                target="_blank"
+                rel="nofollow"
+                style="
+                font-weight: bold;
+                color: #1CAAD9;
+            "
+        >
+            BSA WW2 folding paratrooper bicycle
+        </a>
+
+        on
+
+        <a
+                href="https://sketchfab.com"
+                target="_blank"
+                rel="nofollow"
+                style="
+                font-weight: bold;
+                color: #1CAAD9;
+            "
+        >
+            Sketchfab
+        </a>
+    </p>
+
+</div>
+
+
+<script>
+
+    // ============================================================
+    // SKETCHFAB
+    // ============================================================
+
+    let api = null;
+
+
+    // ============================================================
+    // ROLL
+    // ============================================================
+
+    let currentRoll = 0;
+
+    let rollMarginDegrees = 20;
+
+    let orientationEnabled = false;
+
+
+    // Number of consecutive orientation events that must remain
+    // outside the dead zone before movement starts.
+    //
+    // This prevents tiny accidental movements.
+    let countMovementTrigger = 0;
+
+    const thresholdMovementTrigger = 5;
+
+
+    // ============================================================
+    // MOVEMENT TIMING
+    // ============================================================
+
+    /*
+        Device orientation events can arrive very quickly.
+
+        We therefore limit how frequently we send camera commands
+        to Sketchfab.
+    */
+
+    const movementIntervalMilliseconds = 100;
+
+    let lastMovementTime = 0;
+
+
+    // ============================================================
+    // MOVEMENT SPEED SLIDER
+    // ============================================================
+
+    const slider = document.getElementById("heightSlider");
+
+    const heightValue =
+        document.getElementById("heightValue");
+
+
+    const minVerticalStep = 0.01;
+
+    const maxVerticalStep = 500;
+
+    const sliderRange = 100;
+
+
+    slider.min = 0;
+    slider.max = sliderRange;
+    slider.step = 1;
+    slider.value = 50;
+
+
+    let verticalStep;
+
+
+    function sliderValueToVerticalStep(sliderValue) {
+
+        const ratio =
+            maxVerticalStep / minVerticalStep;
+
+        const growthFactor =
+            Math.pow(
+                ratio,
+                1 / sliderRange
+            );
+
+        return (
+            Math.pow(
+                growthFactor,
+                sliderValue
+            )
+            *
+            minVerticalStep
+        );
+    }
+
+
+    function processSliderInput() {
+
+        verticalStep =
+            sliderValueToVerticalStep(
+                slider.value
+            );
+
+        heightValue.textContent =
+            verticalStep.toFixed(2);
+    }
+
+
+    slider.addEventListener(
+        "input",
+        processSliderInput
+    );
+
+
+    processSliderInput();
+
+
+    // ============================================================
+    // ROLL MARGIN SLIDER
+    // ============================================================
+
+    const rollMarginSlider =
+        document.getElementById(
+            "rollMarginSlider"
+        );
+
+    const rollMarginValue =
+        document.getElementById(
+            "rollMarginValue"
+        );
+
+
+    rollMarginSlider.addEventListener(
+        "input",
+        function () {
+
+            rollMarginDegrees =
+                Number(
+                    rollMarginSlider.value
+                );
+
+            rollMarginValue.textContent =
+                rollMarginDegrees + "°";
+        }
+    );
+
+
+    // ============================================================
+    // ENABLE DEVICE ORIENTATION
+    // ============================================================
+
+    async function enableOrientation() {
+
+        /*
+            Some browsers, particularly Safari/iOS,
+            require explicit permission.
+
+            Other browsers simply allow the event listener.
+        */
+
+        try {
+
+            if (
+                typeof DeviceOrientationEvent !== "undefined"
+                &&
+                typeof DeviceOrientationEvent.requestPermission
+                === "function"
+            ) {
+
+                const permission =
+                    await DeviceOrientationEvent
+                        .requestPermission();
+
+                if (permission !== "granted") {
+
+                    alert(
+                        "Device orientation permission was denied."
+                    );
+
+                    return;
+                }
+            }
+
+
+            if (!orientationEnabled) {
+
+                window.addEventListener(
+                    "deviceorientation",
+                    handleOrientation,
+                    true
+                );
+
+                orientationEnabled = true;
+            }
+
+
+            const button =
+                document.getElementById(
+                    "orientationButton"
+                );
+
+            button.classList.add("active");
+
+            button.textContent =
+                "Roll Control Enabled";
+
+
+            console.log(
+                "Device orientation enabled."
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Could not enable device orientation:",
+                error
+            );
+
+            alert(
+                "Could not enable device orientation."
+            );
+        }
+    }
+
+
+    // ============================================================
+    // DEVICE ORIENTATION EVENT
+    // ============================================================
+
+    function handleOrientation(event) {
+
+        /*
+            DeviceOrientationEvent normally supplies:
+
+                alpha = rotation around Z
+                beta  = front/back rotation
+                gamma = left/right tilt
+
+
+            gamma approximately represents the roll-like
+            left/right tilt we want here.
+
+            Typical gamma range:
+
+                -90° ... +90°
+
+
+            Depending on headset/browser coordinate conventions,
+            the sign may need to be inverted.
+
+            This code currently assumes:
+
+                negative gamma -> roll LEFT
+                positive gamma -> roll RIGHT
+        */
+
+
+        if (event.gamma === null) {
+
+            return;
+        }
+
+
+        currentRoll =
+            event.gamma;
+
+
+        updateRollDisplay();
+
+
+        checkRoll(
+            currentRoll
+        );
+    }
+
+
+    // ============================================================
+    // CHECK ROLL
+    // ============================================================
+
+    function checkRoll(rollDegrees) {
+
+        if (!api) {
+
+            return;
+        }
+
+
+        // --------------------------------------------------------
+        // DEAD ZONE
+        // --------------------------------------------------------
+
+        if (
+            Math.abs(rollDegrees)
+            <= rollMarginDegrees
+        ) {
+
+            countMovementTrigger = 0;
+
+            updateDirectionDisplay(
+                "Neutral"
+            );
+
+            return;
+        }
+
+
+        // --------------------------------------------------------
+        // REQUIRE ROLL TO PERSIST
+        // --------------------------------------------------------
+
+        countMovementTrigger++;
+
+
+        document.getElementById(
+            "triggerValue"
+        ).textContent =
+            countMovementTrigger;
+
+
+        if (
+            countMovementTrigger
+            <
+            thresholdMovementTrigger
+        ) {
+
+            return;
+        }
+
+
+        // --------------------------------------------------------
+        // LIMIT MOVEMENT RATE
+        // --------------------------------------------------------
+
+        const now =
+            performance.now();
+
+
+        if (
+            now - lastMovementTime
+            <
+            movementIntervalMilliseconds
+        ) {
+
+            return;
+        }
+
+
+        lastMovementTime = now;
+
+
+        // --------------------------------------------------------
+        // LEFT
+        // --------------------------------------------------------
+
+        if (
+            rollDegrees
+            <
+            -rollMarginDegrees
+        ) {
+
+            updateDirectionDisplay(
+                "LEFT → Scene DOWN"
+            );
+
+
+            moveScene(
+                -1
+            );
+        }
+
+
+            // --------------------------------------------------------
+            // RIGHT
+        // --------------------------------------------------------
+
+        else if (
+            rollDegrees
+            >
+            rollMarginDegrees
+        ) {
+
+            updateDirectionDisplay(
+                "RIGHT → Scene UP"
+            );
+
+
+            moveScene(
+                +1
+            );
+        }
+    }
+
+
+    // ============================================================
+    // MOVE SCENE
+    // ============================================================
+
+    function moveScene(sceneDirection) {
+
+        /*
+            sceneDirection:
+
+                -1 = scene should visually move DOWN
+                +1 = scene should visually move UP
+
+
+            IMPORTANT:
+
+            Sketchfab's getCameraLookAt()/setCameraLookAt()
+            controls the CAMERA rather than translating the
+            actual scene node.
+
+            Therefore camera movement must be opposite the
+            desired apparent scene movement:
+
+                Scene DOWN -> camera UP
+                Scene UP   -> camera DOWN
+        */
+
+
+        if (!api) {
+
+            return;
+        }
+
+
+        api.getCameraLookAt(
+
+            function (err, camera) {
+
+                if (err) {
+
+                    console.error(
+                        "Could not get camera:",
+                        err
+                    );
+
+                    return;
+                }
+
+
+                const cameraDirection =
+                    -sceneDirection;
+
+
+                const verticalAmount =
+                    verticalStep
+                    *
+                    cameraDirection;
+
+
+                // Move both position and target.
+                //
+                // This translates the camera vertically while
+                // preserving its viewing direction.
+
+                const newPosition = [
+
+                    camera.position[0],
+
+                    camera.position[1],
+
+                    camera.position[2]
+                    +
+                    verticalAmount
+                ];
+
+
+                const newTarget = [
+
+                    camera.target[0],
+
+                    camera.target[1],
+
+                    camera.target[2]
+                    +
+                    verticalAmount
+                ];
+
+
+                api.setCameraLookAt(
+
+                    newPosition,
+
+                    newTarget,
+
+                    0,
+
+                    function (err) {
+
+                        if (err) {
+
+                            console.error(
+                                "Camera movement failed:",
+                                err
+                            );
+
+                            return;
+                        }
+
+
+                        if (sceneDirection < 0) {
+
+                            console.log(
+                                "ROLL LEFT -> SCENE DOWN"
+                            );
+                        }
+
+                        else {
+
+                            console.log(
+                                "ROLL RIGHT -> SCENE UP"
+                            );
+                        }
+                    }
+                );
+            }
+        );
+    }
+
+
+    // ============================================================
+    // DEBUG DISPLAY
+    // ============================================================
+
+    function updateRollDisplay() {
+
+        document.getElementById(
+            "rollValue"
+        ).textContent =
+            currentRoll.toFixed(1)
+            +
+            "°";
+    }
+
+
+    function updateDirectionDisplay(text) {
+
+        const element =
+            document.getElementById(
+                "directionValue"
+            );
+
+
+        element.textContent =
+            text;
+
+
+        element.classList.remove(
+            "left",
+            "right",
+            "neutral"
+        );
+
+
+        if (
+            text.startsWith("LEFT")
+        ) {
+
+            element.classList.add(
+                "left"
+            );
+        }
+
+        else if (
+            text.startsWith("RIGHT")
+        ) {
+
+            element.classList.add(
+                "right"
+            );
+        }
+
+        else {
+
+            element.classList.add(
+                "neutral"
+            );
+        }
+    }
+
+
+    // ============================================================
+    // EXTRACT SKETCHFAB UID
+    // ============================================================
+
+    function extractUid(url) {
+
+        const match =
+            url.match(
+                /([a-zA-Z0-9]{32})(?:\?.*)?$/
+            );
+
+
+        return match
+            ? match[1]
+            : null;
+    }
+
+
+    // ============================================================
+    // SKETCHFAB API STARTED
+    // ============================================================
+
+    function startApiFunc(
+        apiInstance
+    ) {
+
+        api =
+            apiInstance;
+
+
+        api.start();
+
+
+        api.addEventListener(
+
+            "viewerready",
+
+            function () {
+
+                console.log(
+                    "Sketchfab viewer ready."
+                );
+
+            }
+        );
+    }
+
+
+    // ============================================================
+    // LOAD MODEL
+    // ============================================================
+
+    function loadModel() {
+
+        const url =
+            document
+                .getElementById("url")
+                .value
+                .trim();
+
+
+        const uid =
+            extractUid(url);
+
+
+        if (!uid) {
+
+            alert(
+                "Invalid Sketchfab URL"
+            );
+
+            return;
+        }
+
+
+        // --------------------------------------------------------
+        // CREATE IFRAME
+        // --------------------------------------------------------
+
+        const iframe =
+            document.createElement(
+                "iframe"
+            );
+
+
+        iframe.src =
+            "https://sketchfab.com/models/"
+            +
+            uid
+            +
+            "/embed?autostart=1";
+
+
+        iframe.setAttribute(
+            "allow",
+            "autoplay; fullscreen; xr-spatial-tracking"
+        );
+
+
+        iframe.setAttribute(
+            "allowfullscreen",
+            ""
+        );
+
+
+        iframe.setAttribute(
+            "mozallowfullscreen",
+            "true"
+        );
+
+
+        iframe.setAttribute(
+            "webkitallowfullscreen",
+            "true"
+        );
+
+
+        iframe.setAttribute(
+            "execution-while-out-of-viewport",
+            ""
+        );
+
+
+        iframe.setAttribute(
+            "execution-while-not-rendered",
+            ""
+        );
+
+
+        iframe.setAttribute(
+            "web-share",
+            ""
+        );
+
+
+        iframe.frameBorder =
+            "0";
+
+
+        // --------------------------------------------------------
+        // INSERT IFRAME
+        // --------------------------------------------------------
+
+        const container =
+            document.getElementById(
+                "sketchfab-embed-wrapper"
+            );
+
+
+        container.innerHTML =
+            "";
+
+
+        container.appendChild(
+            iframe
+        );
+
+
+        // --------------------------------------------------------
+        // INITIALIZE SKETCHFAB API
+        // --------------------------------------------------------
+
+        const client =
+            new Sketchfab(
+                iframe
+            );
+
+
+        client.init(
+
+            uid,
+
+            {
+                success:
+                startApiFunc,
+
+                error:
+                    function () {
+
+                        console.error(
+                            "Sketchfab API init failed"
+                        );
+                    }
+            }
+        );
+    }
+
+
+    // ============================================================
+    // INIT
+    // ============================================================
+
+    function init() {
+
+        processSliderInput();
+
+
+        rollMarginValue.textContent =
+            rollMarginDegrees
+            +
+            "°";
+
+
+        /*
+            Automatically try to listen.
+
+            Browsers that require explicit permission will still
+            require the user to press "Enable Roll Control".
+        */
+
+        if (
+            typeof DeviceOrientationEvent
+            !==
+            "undefined"
+        ) {
+
+            if (
+                typeof DeviceOrientationEvent.requestPermission
+                !==
+                "function"
+            ) {
+
+                window.addEventListener(
+                    "deviceorientation",
+                    handleOrientation,
+                    true
+                );
+
+                orientationEnabled =
+                    true;
+
+
+                const button =
+                    document.getElementById(
+                        "orientationButton"
+                    );
+
+
+                button.classList.add(
+                    "active"
+                );
+
+
+                button.textContent =
+                    "Roll Control Enabled";
+            }
+        }
+    }
+
+
+    window.onload =
+        init;
+
+</script>
+
+</body>
+</html>
+```

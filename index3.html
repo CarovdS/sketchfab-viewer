@@ -1,0 +1,279 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sketchfab Roll Movement</title>
+    <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background: #111;
+            color: #eee;
+        }
+
+        #controls {
+            padding: 8px;
+            background: #222;
+        }
+
+        #url {
+            width: 60%;
+            padding: 4px;
+        }
+
+        iframe {
+            width: 80%;
+            height: 50vh;
+            margin: 0 10%;
+            border: none;
+        }
+
+        .slider {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .slider input {
+            flex: 1;
+        }
+
+        button {
+            padding: 6px 12px;
+            margin: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="controls">
+
+    <input
+            id="url"
+            value="https://sketchfab.com/3d-models/bsa-ww2-folding-paratrooper-bicycle-4e57c57230fe467c8b618bcd28f14af8"
+    >
+
+    <button onclick="loadModel()">Load Model</button>
+    <button onclick="enableOrientation()">Enable Roll</button>
+
+    <div class="slider">
+        <label>Movement Speed:</label>
+        <input type="range" id="speed" min="0" max="100" value="50">
+        <span id="speedValue"></span>
+    </div>
+
+    <div class="slider">
+        <label>Roll Margin:</label>
+        <input type="range" id="margin" min="0" max="45" value="20">
+        <span id="marginValue">20°</span>
+    </div>
+
+    <div>
+        Roll: <span id="rollValue">0°</span>
+    </div>
+
+</div>
+
+<div id="viewer"></div>
+
+<script>
+
+    let api;
+    let verticalStep;
+    let rollMargin = 20;
+
+    let triggerCount = 0;
+    const triggerThreshold = 5;
+
+    let lastMove = 0;
+    const moveDelay = 100;
+
+    const speed = document.getElementById("speed");
+    const speedValue = document.getElementById("speedValue");
+    const margin = document.getElementById("margin");
+    const marginValue = document.getElementById("marginValue");
+    const rollValue = document.getElementById("rollValue");
+
+
+    function updateSpeed() {
+        const min = 0.01;
+        const max = 500;
+
+        verticalStep =
+            min * Math.pow(max / min, speed.value / 100);
+
+        speedValue.textContent =
+            verticalStep.toFixed(2);
+    }
+
+
+    speed.addEventListener("input", updateSpeed);
+    updateSpeed();
+
+
+    margin.addEventListener("input", () => {
+        rollMargin = Number(margin.value);
+        marginValue.textContent = rollMargin + "°";
+    });
+
+
+    async function enableOrientation() {
+
+        if (
+            typeof DeviceOrientationEvent.requestPermission === "function"
+        ) {
+            const permission =
+                await DeviceOrientationEvent.requestPermission();
+
+            if (permission !== "granted")
+                return;
+        }
+
+        window.addEventListener(
+            "deviceorientation",
+            handleOrientation
+        );
+    }
+
+
+    function handleOrientation(event) {
+
+        if (event.gamma == null || !api)
+            return;
+
+        const roll = event.gamma;
+
+        rollValue.textContent =
+            roll.toFixed(1) + "°";
+
+        checkRoll(roll);
+    }
+
+
+    function checkRoll(roll) {
+
+        if (Math.abs(roll) <= rollMargin) {
+            triggerCount = 0;
+            return;
+        }
+
+        if (++triggerCount < triggerThreshold)
+            return;
+
+        const now = performance.now();
+
+        if (now - lastMove < moveDelay)
+            return;
+
+        lastMove = now;
+
+        if (roll < -rollMargin)
+            moveScene(-1); // left -> scene down
+
+        else if (roll > rollMargin)
+            moveScene(1);  // right -> scene up
+    }
+
+
+    function moveScene(direction) {
+
+        api.getCameraLookAt((err, camera) => {
+
+            if (err)
+                return;
+
+            // Camera moves opposite to apparent scene movement
+            const offset =
+                -direction * verticalStep;
+
+            const position = [
+                camera.position[0],
+                camera.position[1],
+                camera.position[2] + offset
+            ];
+
+            const target = [
+                camera.target[0],
+                camera.target[1],
+                camera.target[2] + offset
+            ];
+
+            api.setCameraLookAt(
+                position,
+                target,
+                0
+            );
+        });
+    }
+
+
+    function extractUid(url) {
+        return url.match(
+            /([a-zA-Z0-9]{32})(?:\?.*)?$/
+        )?.[1];
+    }
+
+
+    function loadModel() {
+
+        const uid =
+            extractUid(
+                document.getElementById("url").value.trim()
+            );
+
+        if (!uid) {
+            alert("Invalid Sketchfab URL");
+            return;
+        }
+
+        const iframe =
+            document.createElement("iframe");
+
+        iframe.src =
+            `https://sketchfab.com/models/${uid}/embed?autostart=1`;
+
+        iframe.allow =
+            "autoplay; fullscreen; xr-spatial-tracking";
+
+        iframe.allowFullscreen = true;
+
+        const viewer =
+            document.getElementById("viewer");
+
+        viewer.innerHTML = "";
+        viewer.appendChild(iframe);
+
+        new Sketchfab(iframe).init(uid, {
+            success(instance) {
+                api = instance;
+                api.start();
+            },
+
+            error() {
+                console.error("Sketchfab API init failed");
+            }
+        });
+    }
+
+
+    // Automatically listen on browsers that do not require permission
+    if (
+        typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission !== "function"
+    ) {
+        window.addEventListener(
+            "deviceorientation",
+            handleOrientation
+        );
+    }
+
+</script>
+
+</body>
+</html>
+```
