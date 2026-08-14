@@ -4,7 +4,7 @@ let nodesGlobal
 
 // modelViewMatrix[8] is approximately +1 for a full left roll and -1 for a full right roll.
 // sin(45°) gives a 45° roll threshold.
-const rollThreshold = Math.sin(45 * Math.PI / 180);
+const rollThreshold = Math.sin(30 * Math.PI / 180);
 const expectedMatrixIntervalMs = 100;
 let lastMatrixTime = null;
 let cameraMoveInProgress = false;
